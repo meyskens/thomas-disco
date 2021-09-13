@@ -155,6 +155,10 @@ func (m *MusicCommand) SpotifyToSearch(id string) []string {
 		} else {
 			offset += 100
 		}
+
+		if len(tracks) >= 300 {
+			hasMore = false // look bro it stops here with your 50000 tracks
+		}
 	}
 
 	return tracks
