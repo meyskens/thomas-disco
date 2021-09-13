@@ -106,6 +106,9 @@ func (m *MusicCommand) SpotifyToSearch(id string) []string {
 	offset := 0
 	for hasMore {
 		// call spotify
+		m.fetchSpotifyToken()
+
+		m.SpotifyTokenMutex.Lock()
 		req, err := http.NewRequest("GET", fmt.Sprintf("https://api.spotify.com/v1/playlists/%s/tracks?offset=%d&limit=100&additional_types=track&market=BE", id, offset), nil)
 		if err != nil {
 			log.Printf("error: %s", err)
@@ -113,6 +116,7 @@ func (m *MusicCommand) SpotifyToSearch(id string) []string {
 		}
 		req.Header.Set("Authorization", "Bearer "+m.SpotifyToken)
 		resp, err := http.DefaultClient.Do(req)
+		m.SpotifyTokenMutex.Unlock()
 		if err != nil {
 			log.Printf("error: %s", err)
 			return tracks
@@ -134,6 +138,10 @@ func (m *MusicCommand) SpotifyToSearch(id string) []string {
 			return tracks
 		}
 
+		if len(data.Items) == 0 {
+			log.Println(string(body))
+		}
+
 		for _, item := range data.Items {
 			if len(item.Track.Artists) == 0 {
 				tracks = append(tracks, item.Track.Name)
@@ -150,4 +158,38 @@ func (m *MusicCommand) SpotifyToSearch(id string) []string {
 	}
 
 	return tracks
+}
+
+func (m *MusicCommand) fetchSpotifyToken() {
+	m.SpotifyTokenMutex.Lock()
+	if m.SpotifyToken != "" {
+		return
+	}
+	resp, err := http.Get("https://open.spotify.com/get_access_token?reason=transport&productType=embed")
+	if err != nil {
+		log.Println("Error getting spotify token", "err", err)
+		return
+	}
+
+	data := struct {
+		AccessToken                      string `json:"accessToken"`
+		AccessTokenExpirationTimestampMs int64  `json:"accessTokenExpirationTimestampMs"`
+	}{}
+
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		log.Println("Error parsing spotify token", "err", err)
+		return
+	}
+
+	m.SpotifyToken = data.AccessToken
+	m.SpotifyTokenMutex.Unlock()
+
+	go func(s int64) {
+		s -= 100
+		time.Sleep(time.Duration(s) * time.Millisecond)
+		m.SpotifyTokenMutex.Lock()
+		m.SpotifyToken = ""
+		m.SpotifyTokenMutex.Unlock()
+	}(data.AccessTokenExpirationTimestampMs - time.Now().Unix()*1000)
 }

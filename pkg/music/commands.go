@@ -20,10 +20,12 @@ type MusicCommand struct {
 	mutex          sync.Mutex
 	songSignal     chan PkgSong
 	YoutubeToken   string
-	SpotifyToken   string
+
+	SpotifyTokenMutex sync.Mutex
+	SpotifyToken      string
 }
 
-func NewMusicCommand(dg *discordgo.Session, yt, st string) (*MusicCommand, error) {
+func NewMusicCommand(dg *discordgo.Session, yt string) (*MusicCommand, error) {
 	songSignal := make(chan PkgSong)
 	go GlobalPlay(songSignal)
 
@@ -32,7 +34,6 @@ func NewMusicCommand(dg *discordgo.Session, yt, st string) (*MusicCommand, error
 		voiceInstances: map[string]*VoiceInstance{},
 		songSignal:     songSignal,
 		YoutubeToken:   yt,
-		SpotifyToken:   st,
 	}, nil
 }
 

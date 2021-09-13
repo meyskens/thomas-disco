@@ -21,7 +21,6 @@ func init() {
 type serveCmdOptions struct {
 	Token        string
 	YouTubeToken string
-	SpotifyToken string
 	Prefix       string `default:"tm"`
 	dg           *discordgo.Session
 }
@@ -39,7 +38,6 @@ func NewServeCmd() *cobra.Command {
 
 	c.Flags().StringVar(&s.Token, "token", "", "Discord Bot Token")
 	c.Flags().StringVar(&s.YouTubeToken, "youtube-token", "", "YouTube API Token")
-	c.Flags().StringVar(&s.SpotifyToken, "spotify-token", "", "Spotify API Token")
 
 	c.MarkFlagRequired("token")
 	c.MarkFlagRequired("youtube-token")
@@ -70,7 +68,7 @@ func (s *serveCmdOptions) RunE(cmd *cobra.Command, args []string) error {
 	}
 	defer s.dg.Close()
 
-	mc, err := music.NewMusicCommand(s.dg, s.YouTubeToken, s.SpotifyToken)
+	mc, err := music.NewMusicCommand(s.dg, s.YouTubeToken)
 	if err != nil {
 		return err
 	}
