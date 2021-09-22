@@ -474,7 +474,7 @@ func (mc *MusicCommand) Playlist(i *discordgo.InteractionCreate) {
 	}
 
 	mc.dg.InteractionResponseEdit(mc.dg.State.User.ID, i.Interaction, &discordgo.WebhookEdit{
-		Content: fmt.Sprintf("Loaded that mixtape, buddy! Let's dance songs like :%s", strings.Join(foundTracks, "\n")),
+		Content: fmt.Sprintf("Loaded that mixtape, buddy! Let's dance songs like:\n%s", strings.Join(foundTracks, "\n")),
 	})
 }
 
