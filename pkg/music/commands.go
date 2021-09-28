@@ -74,7 +74,7 @@ func (m *MusicCommand) InstallSlashCommands(session *discordgo.Session) error {
 
 	err = slash.InstallSlashCommand(session, "", discordgo.ApplicationCommand{
 		Name:        "disconnect",
-		Description: "Remove the bot to a VC",
+		Description: "Remove the bot from a VC",
 		Options:     []*discordgo.ApplicationCommandOption{},
 	})
 	if err != nil {
@@ -117,7 +117,7 @@ func (m *MusicCommand) InstallSlashCommands(session *discordgo.Session) error {
 
 	err = slash.InstallSlashCommand(session, "", discordgo.ApplicationCommand{
 		Name:        "pause",
-		Description: "Stop playing song",
+		Description: "Pause current song",
 		Options:     []*discordgo.ApplicationCommandOption{},
 	})
 	if err != nil {
@@ -140,7 +140,7 @@ func (m *MusicCommand) InstallSlashCommands(session *discordgo.Session) error {
 			{
 				Type:        discordgo.ApplicationCommandOptionInteger,
 				Name:        "volume",
-				Description: "volume from 0 to 100",
+				Description: "Volume from 0 to 100",
 				Required:    true,
 			},
 		},
@@ -151,12 +151,12 @@ func (m *MusicCommand) InstallSlashCommands(session *discordgo.Session) error {
 
 	err = slash.InstallSlashCommand(session, "", discordgo.ApplicationCommand{
 		Name:        "playlist",
-		Description: "Play a spotify song",
+		Description: "Play a spotify playlist",
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Type:        discordgo.ApplicationCommandOptionString,
 				Name:        "link",
-				Description: "link to a spotfy playlist",
+				Description: "Link to a spotify playlist",
 				Required:    true,
 			},
 		},
