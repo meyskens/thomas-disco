@@ -431,12 +431,13 @@ func (mc *MusicCommand) Playlist(i *discordgo.InteractionCreate) {
 	url, err := url.Parse(link)
 	if err != nil || url.Hostname() != "open.spotify.com" {
 		mc.dg.InteractionResponseEdit(mc.dg.State.User.ID, i.Interaction, &discordgo.WebhookEdit{
-			Content: "Woah this is a weird link...",
+			Content: "Woah this is a weird link... I only know ones that start with open.spotify.com",
 		})
 		return
 	}
 
 	id := strings.Split(url.Path, "/")[len(strings.Split(url.Path, "/"))-1]
+	log.Printf("Spotify ID %s", id)
 
 	tracks := mc.SpotifyToSearch(id)
 	if len(tracks) == 0 {
@@ -448,6 +449,7 @@ func (mc *MusicCommand) Playlist(i *discordgo.InteractionCreate) {
 	foundTracks := []string{}
 
 	for _, track := range tracks {
+		log.Printf("Looking for %s", track)
 		// send play my_song_youtube
 		song, err := mc.YoutubeFind(track, i.Member.User.ID, i.ChannelID, v)
 		if err != nil || song.data.ID == "" {

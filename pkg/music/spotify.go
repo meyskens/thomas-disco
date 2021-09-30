@@ -126,7 +126,6 @@ func (m *MusicCommand) SpotifyToSearch(id string) []string {
 		if err != nil {
 			log.Println("Error getting spotify playlist", "err", err)
 			return tracks
-
 		}
 
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -166,6 +165,7 @@ func (m *MusicCommand) SpotifyToSearch(id string) []string {
 
 func (m *MusicCommand) fetchSpotifyToken() {
 	m.SpotifyTokenMutex.Lock()
+	defer m.SpotifyTokenMutex.Unlock()
 	if m.SpotifyToken != "" {
 		return
 	}
@@ -187,7 +187,6 @@ func (m *MusicCommand) fetchSpotifyToken() {
 	}
 
 	m.SpotifyToken = data.AccessToken
-	m.SpotifyTokenMutex.Unlock()
 
 	go func(s int64) {
 		s -= 100
