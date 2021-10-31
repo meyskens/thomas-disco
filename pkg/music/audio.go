@@ -235,7 +235,6 @@ func encodeToMP3(file string) error {
 	args := []string{
 		"-stats",
 		"-i", file,
-		"-abr", "1",
 		"-b:a", "320",
 		file + ".mp3",
 	}
