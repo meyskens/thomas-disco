@@ -15,6 +15,8 @@ type Song struct {
 	Title     string
 	Duration  string
 	VideoURL  string
+
+	URLIsLocal bool
 }
 
 type PkgSong struct {

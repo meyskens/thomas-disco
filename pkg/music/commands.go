@@ -19,13 +19,23 @@ type MusicCommand struct {
 	voiceInstances map[string]*VoiceInstance
 	mutex          sync.Mutex
 	songSignal     chan PkgSong
-	YoutubeToken   string
+
+	opts MusicOptions
 
 	SpotifyTokenMutex sync.Mutex
 	SpotifyToken      string
 }
 
-func NewMusicCommand(dg *discordgo.Session, yt string) (*MusicCommand, error) {
+type MusicOptions struct {
+	YoutubeToken string
+	S3Access     string
+	S3Bucket     string
+	S3Secret     string
+	S3Region     string
+	S3Endpoint   string
+}
+
+func NewMusicCommand(dg *discordgo.Session, opts MusicOptions) (*MusicCommand, error) {
 	songSignal := make(chan PkgSong)
 	go GlobalPlay(songSignal)
 
@@ -33,7 +43,7 @@ func NewMusicCommand(dg *discordgo.Session, yt string) (*MusicCommand, error) {
 		dg:             dg,
 		voiceInstances: map[string]*VoiceInstance{},
 		songSignal:     songSignal,
-		YoutubeToken:   yt,
+		opts:           opts,
 	}, nil
 }
 
@@ -197,7 +207,7 @@ func (mc *MusicCommand) Join(i *discordgo.InteractionCreate, doNotReply bool) er
 		}
 		// create new voice instance
 		mc.mutex.Lock()
-		v = NewVoiceInstance(vc.Bitrate / 1000)
+		v = NewVoiceInstance(vc.Bitrate/1000, mc.opts)
 		mc.voiceInstances[i.GuildID] = v
 		v.guildID = i.GuildID
 		v.session = mc.dg

@@ -94,7 +94,7 @@ func (m *MusicCommand) YoutubeFind(searchString, uID, chID string, v *VoiceInsta
 	}
 
 	if audioId == "" {
-		err = errors.New("no soung found")
+		err = errors.New("no song found")
 		return
 	}
 
@@ -126,7 +126,7 @@ func (m *MusicCommand) YoutubeFind(searchString, uID, chID string, v *VoiceInsta
 		}
 	}
 
-	videoURLString, err := yt.GetStreamURL(vid, &formats[0])
+	videoURLString, err := yt.GetStreamURL(vid, &bestFormat)
 	if err != nil {
 		err = fmt.Errorf("error getting video URL: %v", err)
 		return
@@ -156,6 +156,7 @@ func (m *MusicCommand) YoutubeFind(searchString, uID, chID string, v *VoiceInsta
 		audioTitle,
 		durationString,
 		videoURLString,
+		false,
 	}
 
 	song_struct.data = song
@@ -227,7 +228,7 @@ func (m *MusicCommand) UnofficialSearch(query string) (string, string, string, e
 }
 
 func (m *MusicCommand) OfficialSearch(query string) (string, string, string, error) {
-	service, err := youtube.NewService(context.TODO(), option.WithAPIKey(m.YoutubeToken))
+	service, err := youtube.NewService(context.TODO(), option.WithAPIKey(m.opts.YoutubeToken))
 	if err != nil {
 		return "", "", "", err
 	}

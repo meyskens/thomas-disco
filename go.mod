@@ -3,6 +3,7 @@ module github.com/meyskens/thomas-disco
 go 1.16
 
 require (
+	github.com/aws/aws-sdk-go v1.41.14 // indirect
 	github.com/bwmarrin/discordgo v0.23.2
 	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b

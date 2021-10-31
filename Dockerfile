@@ -21,4 +21,7 @@ RUN apk add --no-cache git ffmpeg ca-certificates && update-ca-certificates
 
 COPY --from=build /go/src/github.com/meyskens/thomas-disco/disco /usr/local/bin/
 
+RUN mkdir /opt/disco
+WORKDIR /opt/disco
+
 CMD [ "/usr/local/bin/disco", "serve" ]
