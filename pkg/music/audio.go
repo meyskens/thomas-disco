@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"sync"
@@ -72,7 +71,7 @@ func (v *VoiceInstance) PlayQueue(song Song) {
 			v.pause = false
 			v.voice.Speaking(true)
 
-			v.DCA(v.nowPlaying.VidID, v.nowPlaying.VideoURL, !v.nowPlaying.URLIsLocal)
+			v.DCA(v.nowPlaying.VidID)
 
 			v.QueueRemoveFisrt()
 			if v.stop {
@@ -87,7 +86,8 @@ func (v *VoiceInstance) PlayQueue(song Song) {
 }
 
 // DCA
-func (v *VoiceInstance) DCA(name, url string, store bool) {
+func (v *VoiceInstance) DCA(name string) {
+	store := true
 	if v.musicOpts.S3Bucket == "" {
 		store = false
 	}
@@ -121,12 +121,11 @@ func (v *VoiceInstance) DCA(name, url string, store bool) {
 		}
 	} else if store {
 		// download the audio to s3
-		resp, err := http.Get(url)
+		dw, err := downloadWithYTDLP(name)
 		if err != nil {
-			log.Println("Error downloading audio:", err)
-			return
+			log.Println("FATA: Failed downloading the audio: ", err)
 		}
-		defer resp.Body.Close()
+		defer dw.Close()
 
 		// store to disk using a teereader
 		os.Remove(name) // if it exists is probably is corrupt!
@@ -136,7 +135,7 @@ func (v *VoiceInstance) DCA(name, url string, store bool) {
 			return
 		}
 
-		r := io.TeeReader(resp.Body, out)
+		r := io.TeeReader(dw, out)
 
 		// download 100k bytes before encoding
 		bufferedReader := bufio.NewReaderSize(r, 2*1024*1024)
@@ -147,8 +146,17 @@ func (v *VoiceInstance) DCA(name, url string, store bool) {
 			log.Println("FATA: Failed creating an encoding session: ", err)
 		}
 	} else {
-		var err error
-		encodeSession, err = dca.EncodeFile(url, opts)
+		dw, err := downloadWithYTDLP(name)
+		if err != nil {
+			log.Println("FATA: Failed downloading the audio: ", err)
+		}
+		defer dw.Close()
+
+		// download 100k bytes before encoding
+		bufferedReader := bufio.NewReaderSize(dw, 2*1024*1024)
+		bufferedReader.Peek(100 * 1024)
+
+		encodeSession, err = dca.EncodeMem(bufferedReader, opts)
 		if err != nil {
 			log.Println("FATA: Failed creating an encoding session: ", err)
 		}
@@ -248,4 +256,29 @@ func encodeToMP3(file string) error {
 	}
 
 	return ffmpeg.Wait()
+}
+
+func downloadWithYTDLP(id string) (io.ReadCloser, error) {
+	args := []string{
+		"-o", "-",
+		"-f bestaudio",
+		id,
+	}
+
+	yt := exec.Command("yt-dlp", args...)
+	data, err := yt.StdoutPipe()
+
+	yt.Stderr = os.Stderr
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Starts the yt command
+	err = yt.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
