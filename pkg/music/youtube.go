@@ -106,47 +106,7 @@ func (m *MusicCommand) YoutubeFind(searchString, uID, chID string, v *VoiceInsta
 		return
 	}
 
-	formats := vid.Formats.WithAudioChannels()
-	formats.Sort()
-	if len(formats) == 0 {
-		err = fmt.Errorf("no audio format found")
-		return
-	}
-
-	bestFormat := formats[0]
-	for _, format := range formats {
-		if format.AudioQuality == bestFormat.AudioQuality {
-			break
-		}
-		if format.AudioQuality == "AUDIO_QUALITY_MEDIUM" && bestFormat.AudioQuality == "AUDIO_QUALITY_LOW" {
-			bestFormat = format
-		}
-		if format.AudioQuality == "AUDIO_QUALITY_HIGH" && (bestFormat.AudioQuality == "AUDIO_QUALITY_LOW" || bestFormat.AudioQuality == "AUDIO_QUALITY_MEDIUM") {
-			bestFormat = format
-		}
-	}
-
-	videoURLString, err := yt.GetStreamURL(vid, &bestFormat)
-	if err != nil {
-		err = fmt.Errorf("error getting video URL: %v", err)
-		return
-	}
-
 	durationString := getDuration(duration, timeOffset)
-
-	videoURL, _ := url.Parse(videoURLString)
-	if videoURL != nil {
-		if timeOffset != "" {
-
-			offset, _ := time.ParseDuration(timeOffset)
-			query := videoURL.Query()
-			query.Set("begin", fmt.Sprint(int64(offset/time.Millisecond)))
-			videoURL.RawQuery = query.Encode()
-		}
-		videoURLString = videoURL.String()
-	} else {
-		log.Println("Video URL not found")
-	}
 
 	song := Song{
 		chID,
@@ -155,8 +115,6 @@ func (m *MusicCommand) YoutubeFind(searchString, uID, chID string, v *VoiceInsta
 		vid.ID,
 		audioTitle,
 		durationString,
-		videoURLString,
-		false,
 	}
 
 	song_struct.data = song
