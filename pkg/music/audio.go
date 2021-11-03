@@ -88,6 +88,7 @@ func (v *VoiceInstance) PlayQueue(song Song) {
 // DCA
 func (v *VoiceInstance) DCA(name string) {
 	store := true
+	var exitCode func() int
 	if v.musicOpts.S3Bucket == "" {
 		store = false
 	}
@@ -121,7 +122,8 @@ func (v *VoiceInstance) DCA(name string) {
 		}
 	} else if store {
 		// download the audio to s3
-		dw, err := downloadWithYTDLP(name)
+		dw, err, exitCodeGetter := downloadWithYTDLP(name)
+		exitCode = exitCodeGetter
 		if err != nil {
 			log.Println("FATA: Failed downloading the audio: ", err)
 		}
@@ -146,7 +148,8 @@ func (v *VoiceInstance) DCA(name string) {
 			log.Println("FATA: Failed creating an encoding session: ", err)
 		}
 	} else {
-		dw, err := downloadWithYTDLP(name)
+		dw, err, exitCodeGetter := downloadWithYTDLP(name)
+		exitCode = exitCodeGetter
 		if err != nil {
 			log.Println("FATA: Failed downloading the audio: ", err)
 		}
@@ -172,7 +175,7 @@ func (v *VoiceInstance) DCA(name string) {
 		log.Println("FATA: An error occured", err)
 		return
 	}
-	if store && !encodeSession.Killed {
+	if store && !encodeSession.Killed && (exitCode != nil && exitCode() == 0) {
 		go func() {
 			out.Close()
 			defer os.Remove(name)
@@ -258,7 +261,7 @@ func encodeToMP3(file string) error {
 	return ffmpeg.Wait()
 }
 
-func downloadWithYTDLP(id string) (io.ReadCloser, error) {
+func downloadWithYTDLP(id string) (io.ReadCloser, error, func() int) {
 	args := []string{
 		"-o", "-",
 		"-f bestaudio",
@@ -280,5 +283,5 @@ func downloadWithYTDLP(id string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	return data, nil
+	return data, nil, yt.ProcessState.ExitCode
 }
