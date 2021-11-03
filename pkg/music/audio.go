@@ -2,6 +2,7 @@ package music
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -86,7 +87,8 @@ func (v *VoiceInstance) PlayQueue(song Song) {
 }
 
 // DCA
-func (v *VoiceInstance) DCA(name string) {
+func (v *VoiceInstance) DCA(songID string) {
+	filename := fmt.Sprintf("%s-%s", songID, v.channelID)
 	store := true
 	var exitCode func() int
 	if v.musicOpts.S3Bucket == "" {
@@ -106,7 +108,7 @@ func (v *VoiceInstance) DCA(name string) {
 	var encodeSession *dca.EncodeSession
 	var out *os.File
 
-	s3File, err := s3.Get(name)
+	s3File, err := s3.Get(songID)
 	if err == nil {
 		log.Println("Got song from S3")
 		store = false
@@ -122,7 +124,7 @@ func (v *VoiceInstance) DCA(name string) {
 		}
 	} else if store {
 		// download the audio to s3
-		dw, err, exitCodeGetter := downloadWithYTDLP(name)
+		dw, err, exitCodeGetter := downloadWithYTDLP(songID)
 		exitCode = exitCodeGetter
 		if err != nil {
 			log.Println("FATA: Failed downloading the audio: ", err)
@@ -130,8 +132,8 @@ func (v *VoiceInstance) DCA(name string) {
 		defer dw.Close()
 
 		// store to disk using a teereader
-		os.Remove(name) // if it exists is probably is corrupt!
-		out, err = os.Create(name)
+		os.Remove(filename) // if it exists is probably is corrupt!
+		out, err = os.Create(filename)
 		if err != nil {
 			log.Println("Error creating output file:", err)
 			return
@@ -148,7 +150,7 @@ func (v *VoiceInstance) DCA(name string) {
 			log.Println("FATA: Failed creating an encoding session: ", err)
 		}
 	} else {
-		dw, err, exitCodeGetter := downloadWithYTDLP(name)
+		dw, err, exitCodeGetter := downloadWithYTDLP(songID)
 		exitCode = exitCodeGetter
 		if err != nil {
 			log.Println("FATA: Failed downloading the audio: ", err)
@@ -178,25 +180,25 @@ func (v *VoiceInstance) DCA(name string) {
 	if store && !encodeSession.Killed && (exitCode != nil && exitCode() == 0) {
 		go func() {
 			out.Close()
-			defer os.Remove(name)
-			defer os.Remove(name + ".mp3")
-			err := encodeToMP3(name)
+			defer os.Remove(filename)
+			defer os.Remove(filename + ".mp3")
+			err := encodeToMP3(filename)
 			if err != nil {
 				log.Println("failed encoding to mp3: ", err)
 				return
 			}
-			f, err := os.Open(name + ".mp3")
+			f, err := os.Open(filename + ".mp3")
 			if err != nil {
 				log.Println("failed opening file: ", err)
 				return
 			}
 			defer f.Close()
-			err = s3.Put(name, f)
+			err = s3.Put(songID, f)
 			if err != nil {
 				log.Println("failed uploading to s3: ", err)
 				return
 			}
-			log.Printf("Uploaded %s to s3\n", name)
+			log.Printf("Uploaded %s to s3\n", songID)
 		}()
 	}
 }
