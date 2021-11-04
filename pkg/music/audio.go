@@ -176,6 +176,7 @@ func (v *VoiceInstance) DCA(name string) {
 	}
 	if store && !encodeSession.Killed {
 		go func() {
+			log.Printf("Uploading %s to s3\n", name)
 			out.Close()
 			defer os.Remove(name)
 			defer os.Remove(name + ".mp3")
