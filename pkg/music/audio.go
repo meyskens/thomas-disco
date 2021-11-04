@@ -89,6 +89,7 @@ func (v *VoiceInstance) PlayQueue(song Song) {
 func (v *VoiceInstance) DCA(name string) {
 	store := true
 	if v.musicOpts.S3Bucket == "" {
+		log.Println("No S3 bucket specified, not saving")
 		store = false
 	}
 	s3, err := NewS3(v.musicOpts.S3Endpoint, v.musicOpts.S3Region, v.musicOpts.S3Bucket, v.musicOpts.S3Access, v.musicOpts.S3Secret)
@@ -120,6 +121,7 @@ func (v *VoiceInstance) DCA(name string) {
 			log.Println("FATA: Failed creating an encoding session: ", err)
 		}
 	} else if store {
+		log.Printf("Song not found on S3 %q, downloading", err)
 		// download the audio to s3
 		dw, err := downloadWithYTDLP(name)
 		if err != nil {
@@ -195,6 +197,8 @@ func (v *VoiceInstance) DCA(name string) {
 			}
 			log.Printf("Uploaded %s to s3\n", name)
 		}()
+	} else if encodeSession.Killed {
+		log.Println("Not storing song as encoder got killed by user")
 	}
 }
 
