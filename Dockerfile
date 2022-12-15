@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.16-alpine as build
+FROM --platform=$BUILDPLATFORM golang:1.19-alpine as build
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -15,7 +15,7 @@ RUN export GOARM=6 && \
     if [ "$TARGETPLATFORM" == "linux/arm" ]; then export GOARCH=arm; fi && \
     go build -ldflags "-X main.revision=$(git rev-parse --short HEAD)" ./cmd/disco/
 
-FROM alpine:3.13
+FROM alpine:3.17
 
 RUN apk add --no-cache curl git ffmpeg ca-certificates aria2 python3 && update-ca-certificates
 
